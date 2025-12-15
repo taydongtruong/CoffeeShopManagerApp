@@ -55,7 +55,7 @@
 .item-image {
     width: 100%;
     height: 150px; /* Chiều cao cố định */
-    object-fit: cover; /* Cắt ảnh để vừa khung mà không bị méo */
+    object-fit: contain; /* Cắt ảnh để vừa khung mà không bị méo */
     border-radius: 8px;
     margin-bottom: 10px;
 }
