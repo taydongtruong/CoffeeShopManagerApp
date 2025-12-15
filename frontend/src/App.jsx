@@ -198,7 +198,7 @@ function App() {
                     </label>
                     
                     <button onClick={() => startEditing(item)} className="edit-btn" title="Sửa tên/giá">Sửa</button>
-                    <button onClick={() => handleDeleteItem(item.id)} className="delete-btn" title="Bạn chắc chắn xoá món này?">Xóa bỏ</button>
+                    <button onClick={() => handleDeleteItem(item.id)} className="delete-btn" title="Bạn chắc chắn xoá món này?">Xóa món</button>
                   </div>
                 </>
               )}
