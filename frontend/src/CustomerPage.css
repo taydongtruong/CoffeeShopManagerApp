@@ -1,0 +1,78 @@
+/* Loại bỏ các style nền đen mặc định của Admin Page */
+.customer-page-container {
+    padding: 2rem;
+    text-align: center;
+    background-color: #f7f5f3; /* Nền màu kem nhẹ nhàng */
+    min-height: 100vh;
+    color: #333;
+}
+
+.customer-header h1 {
+    color: #a05a2c; /* Màu nâu đặc trưng */
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+.customer-header p {
+    font-size: 1.1rem;
+    margin-bottom: 30px;
+}
+
+/* Bố cục danh sách menu dạng lưới (grid) */
+.customer-menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 0 5%;
+}
+
+.customer-item-card {
+    background-color: #ffffff;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    text-align: left;
+    transition: transform 0.3s ease-in-out;
+}
+
+.customer-item-card:hover {
+    transform: translateY(-5px);
+}
+
+.customer-item-card h3 {
+    font-size: 1.2rem;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.customer-item-card p {
+    font-size: 1rem;
+    color: #a05a2c;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.item-image {
+    width: 100%;
+    height: 150px; /* Chiều cao cố định */
+    object-fit: cover; /* Cắt ảnh để vừa khung mà không bị méo */
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.placeholder-image {
+    width: 100%;
+    height: 150px;
+    background-color: #eee;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #888;
+    border: 1px solid #ddd;
+}
+
+.item-info {
+    padding: 0 5px;
+}
