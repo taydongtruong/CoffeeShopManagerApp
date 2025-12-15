@@ -1,0 +1,90 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 4rem;
+  text-align: left;
+}
+
+.App-header {
+  background-color: #282c34;
+  padding: 100px;
+  color: #CCCC33;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.menu-list {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.menu-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #61dafb;
+  color: #282c34;
+  padding: 10px 15px;
+  border-radius: 5px;
+  font-weight: bold;
+  transition: transform 0.2s;
+}
+
+.menu-item:hover {
+    transform: translateY(-2px);
+}
+
+/* --- CSS cho Form Thêm Món --- */
+.form-container {
+  background-color: #3a3f47;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  width: 95%;
+}
+
+.form-container form {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.form-container input {
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  width: 150px;
+}
+
+.form-container button {
+  padding: 10px 15px;
+  border-radius: 5px;
+  border: none;
+  background-color: #61dafb;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.form-container button:hover {
+  background-color: #21a1f1;
+}
+
+/* --- CSS cho Nút Xóa --- */
+.delete-btn {
+  background-color: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: normal;
+  transition: background-color 0.2s;
+}
+
+.delete-btn:hover {
+  background-color: green;
+}
