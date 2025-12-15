@@ -100,20 +100,20 @@ function App() {
             <form onSubmit={handleAddItem}>
                 <input
                     type="text"
-                    placeholder="Tên món (ví dụ: Cappuccino)"
+                    placeholder="Tên món (ví dụ: Cà phê đá)"
                     value={newItemName}
                     onChange={(e) => setNewItemName(e.target.value)}
                     required
                 />
                 <input
                     type="number"
-                    step="0.01"
-                    placeholder="Giá (ví dụ: 4.50)"
+                    step="1000"
+                    placeholder="Giá (ví dụ: 10.000vnđ)"
                     value={newItemPrice}
                     onChange={(e) => setNewItemPrice(e.target.value)}
                     required
                 />
-                <button type="submit">Thêm Món</button>
+                <button type="submit">Thêm Thức uống</button>
             </form>
         </div>
         
@@ -129,7 +129,7 @@ function App() {
                 className="delete-btn"
                 title="Bạn chắc chắn xoá món này?"
               >
-                Xóa bỏ
+                Xóa món
               </button>
             </div>
           ))}
