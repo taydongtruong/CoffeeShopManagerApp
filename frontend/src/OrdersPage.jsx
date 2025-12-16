@@ -20,7 +20,7 @@ function OrdersPage() {
   // 2. Hàm đánh dấu hoàn thành đơn hàng (Sử dụng API PUT)
   const completeOrder = async (orderId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/orders/${orderId}/complete`, {
+      const response = await fetch(`https://coffeeshopmanagerapp.onrender.com/api/orders/${orderId}/complete`, {
         method: 'PUT',
       });
       if (response.ok) {
@@ -35,7 +35,7 @@ function OrdersPage() {
   const deleteOrder = async (orderId) => {
     if (!window.confirm("Bạn có chắc muốn xóa đơn hàng này?")) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/orders/${orderId}`, {
+      const response = await fetch(`https://coffeeshopmanagerapp.onrender.com/api/orders/${orderId}`, {
         method: 'DELETE',
       });
       if (response.ok) {
