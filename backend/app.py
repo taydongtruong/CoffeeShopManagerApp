@@ -4,14 +4,10 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
-@app.route('/')
-def index():
-    return {"message": "API Coffee Shop đang hoạt động ổn định!"}, 200
-    
 app = Flask(__name__)
 CORS(app) # Cho phép Frontend truy cập API
 
-# Cấu hình đường dẫn tuyệt đối cho Database
+# --- CẤU HÌNH ---
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'coffee_shop.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -42,6 +38,11 @@ class Order(db.Model):
     def to_dict(self):
         return {"id": self.id, "items": self.items, "total_price": self.total_price, "status": self.status}
 
+# --- ROUTES ---
+
+@app.route('/')
+def index():
+    return {"message": "API Coffee Shop đang hoạt động ổn định!"}, 200
 
 # --- API MENU ---
 @app.route('/api/menu', methods=['GET'])
@@ -72,16 +73,24 @@ def add_item():
 @app.route('/api/menu/<int:item_id>', methods=['PUT', 'DELETE'])
 def manage_item(item_id):
     item = CoffeeItem.query.get_or_404(item_id)
+    
     if request.method == 'DELETE':
         db.session.delete(item)
         db.session.commit()
         return jsonify({"message": "Deleted"}), 200
     
-    # Logic Update (PUT)
-    data = request.get_json()
-    if data:
-        item.name = data.get('name', item.name)
-        item.price = data.get('price', item.price)
+    # Logic Update (Hỗ trợ cả JSON và File ảnh cho nút Đổi ảnh)
+    if 'image' in request.files:
+        image_file = request.files['image']
+        filename = secure_filename(image_file.filename)
+        image_file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        item.image_url = f'/uploads/{filename}'
+    else:
+        data = request.get_json()
+        if data:
+            item.name = data.get('name', item.name)
+            item.price = data.get('price', item.price)
+            
     db.session.commit()
     return jsonify(item.to_dict()), 200
 
@@ -94,6 +103,8 @@ def uploaded_file(filename):
 def manage_orders():
     if request.method == 'POST':
         data = request.get_json()
+        if not data or 'cart' not in data:
+            return jsonify({"message": "Giỏ hàng trống"}), 400
         items_summary = ", ".join([f"{i['name']} (x{i['quantity']})" for i in data['cart']])
         new_order = Order(items=items_summary, total_price=data['totalPrice'])
         db.session.add(new_order)
@@ -102,6 +113,13 @@ def manage_orders():
     
     orders = Order.query.all()
     return jsonify([order.to_dict() for order in orders])
+
+@app.route('/api/orders/<int:order_id>', methods=['DELETE'])
+def delete_order(order_id):
+    order = Order.query.get_or_404(order_id)
+    db.session.delete(order)
+    db.session.commit()
+    return jsonify({"message": "Order deleted"}), 200
 
 @app.route('/api/orders/<int:order_id>/complete', methods=['PUT'])
 def complete_order(order_id):
@@ -114,11 +132,9 @@ def complete_order(order_id):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        # Dữ liệu mẫu ban đầu
         if CoffeeItem.query.count() == 0:
             db.session.add(CoffeeItem(name="Espresso", price=35000))
             db.session.commit()
             
-    # Lấy PORT từ hệ thống (quan trọng khi deploy lên Render/Railway)
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
