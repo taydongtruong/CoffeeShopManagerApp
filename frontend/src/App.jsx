@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import './App.css';
 
 function App() {
+  // ĐỊNH NGHĨA URL BACKEND TẠI ĐÂY ĐỂ DỄ QUẢN LÝ
+  const API_BASE_URL = 'https://coffeeshopmanagerapp.onrender.com';
+
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -11,12 +14,15 @@ function App() {
   const [editingItem, setEditingItem] = useState(null); 
   const [editName, setEditName] = useState('');
   const [editPrice, setEditPrice] = useState('');
-  // State mới để quản lý việc tải ảnh lên
   const [uploadingImageId, setUploadingImageId] = useState(null);
 
+  // 1. SỬA LỖI: Thêm đúng endpoint /api/menu
   const fetchMenu = () => {
-    fetch('https://coffeeshopmanagerapp.onrender.com')
-      .then(response => response.json())
+    fetch(`${API_BASE_URL}/api/menu`)
+      .then(response => {
+        if (!response.ok) throw new Error('Phản hồi từ server không hợp lệ');
+        return response.json();
+      })
       .then(data => {
         setMenuItems(data);
         setLoading(false);
@@ -31,9 +37,7 @@ function App() {
     fetchMenu();
   }, []);
 
-  // Hàm Thêm món (giữ nguyên)
   const handleAddItem = async (event) => {
-    // ... (logic handleAddItem giữ nguyên như phiên bản trước) ...
     event.preventDefault(); 
     if (!newItemName || !newItemPrice) return;
 
@@ -41,11 +45,12 @@ function App() {
     formData.append('name', newItemName);
     formData.append('price', parseFloat(newItemPrice));
     if (newItemImage) {
-        formData.append('image', newItemImage[0]); // Lấy file đầu tiên
+        formData.append('image', newItemImage[0]);
     }
 
     try {
-      const response = await fetch('https://coffeeshopmanagerapp.onrender.com', {
+      // 2. SỬA LỖI: Thêm đúng endpoint /api/menu
+      const response = await fetch(`${API_BASE_URL}/api/menu`, {
         method: 'POST',
         body: formData, 
       });
@@ -58,28 +63,23 @@ function App() {
       setNewItemPrice('');
       setNewItemImage(null);
       alert("Đã thêm món thành công!");
-
     } catch (error) {
-      console.error("Lỗi khi thêm món: ", error);
-      alert("Đã xảy ra lỗi khi thêm món.");
+      alert("Lỗi khi thêm món: " + error.message);
     }
   };
 
-  // Hàm Xóa món (giữ nguyên)
   const handleDeleteItem = async (itemId) => {
-    // ... (logic xóa giữ nguyên) ...
     try {
-        const response = await fetch(`https://coffeeshopmanagerapp.onrender.com/${itemId}`, { method: 'DELETE' });
+        // 3. SỬA LỖI: Thêm đúng endpoint /api/menu/${itemId}
+        const response = await fetch(`${API_BASE_URL}/api/menu/${itemId}`, { method: 'DELETE' });
         if (!response.ok) throw new Error('Không thể xóa món');
         setMenuItems(menuItems.filter(item => item.id !== itemId));
-        alert(`Đã xóa món ID: ${itemId}`);
+        alert(`Đã xóa thành công!`);
       } catch (error) {
-        console.error("Lỗi khi xóa món: ", error);
-        alert("Đã xảy ra lỗi khi xóa món.");
+        alert("Lỗi khi xóa: " + error.message);
       }
   };
   
-  // Hàm Sửa tên/giá (giữ nguyên)
   const startEditing = (item) => {
     setEditingItem(item.id);
     setEditName(item.name);
@@ -95,23 +95,22 @@ function App() {
   const handleUpdateItem = async (event, itemId) => {
     event.preventDefault();
     try {
-      const response = await fetch(`https://coffeeshopmanagerapp.onrender.com/${itemId}`, {
+      // 4. SỬA LỖI: Thêm đúng endpoint /api/menu/${itemId}
+      const response = await fetch(`${API_BASE_URL}/api/menu/${itemId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: editName, price: parseFloat(editPrice) }),
       });
-      if (!response.ok) throw new Error('Không thể cập nhật món');
+      if (!response.ok) throw new Error('Không thể cập nhật');
       const updatedItem = await response.json();
       setMenuItems(menuItems.map(item => item.id === itemId ? updatedItem : item));
       cancelEditing(); 
-      alert(`Đã cập nhật món ID: ${itemId}`);
+      alert(`Đã cập nhật xong!`);
     } catch (error) {
-      console.error("Lỗi khi cập nhật món: ", error);
-      alert("Đã xảy ra lỗi khi cập nhật món.");
+      alert("Lỗi: " + error.message);
     }
   };
 
-  // --- HÀM MỚI ĐỂ CẬP NHẬT ẢNH RIÊNG BIỆT ---
   const handleImageChange = async (event, itemId) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -119,86 +118,73 @@ function App() {
     setUploadingImageId(itemId);
     const formData = new FormData();
     formData.append('image', file);
-    // Vẫn dùng PUT request nhưng chỉ gửi ảnh, backend sẽ xử lý
 
     try {
-      const response = await fetch(`https://coffeeshopmanagerapp.onrender.com/${itemId}`, {
+      // 5. SỬA LỖI: Thêm đúng endpoint /api/menu/${itemId}
+      const response = await fetch(`${API_BASE_URL}/api/menu/${itemId}`, {
         method: 'PUT',
-        body: formData, // Gửi FormData chứ không phải JSON
+        body: formData,
       });
 
-      if (!response.ok) throw new Error('Không thể cập nhật ảnh');
-      
+      if (!response.ok) throw new Error('Không thể tải ảnh lên');
       const updatedItem = await response.json();
-      // Cập nhật lại danh sách menu với ảnh mới
       setMenuItems(menuItems.map(item => item.id === itemId ? updatedItem : item));
-      alert("Đã cập nhật ảnh thành công!");
-      setUploadingImageId(null);
-
+      alert("Cập nhật ảnh thành công!");
     } catch (error) {
-      console.error("Lỗi khi cập nhật ảnh: ", error);
-      alert("Đã xảy ra lỗi khi cập nhật ảnh.");
+      alert("Lỗi tải ảnh: " + error.message);
+    } finally {
       setUploadingImageId(null);
     }
   };
 
-
-  if (loading) return <div className="App-header">Đang tải danh mục...</div>;
-  if (error) return <div className="App-header">Lỗi: {error.message}. Backend có đang chạy không?</div>;
+  if (loading) return <div className="App-header">Đang tải dữ liệu từ Render...</div>;
+  if (error) return <div className="App-header">Lỗi kết nối: {error.message}</div>;
 
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Reak Smaay Coffee Shop (Admin)</h1>
+        <h1>Coffee Shop Management (Admin)</h1>
 
-        {/* FORM THÊM MÓN MỚI (giữ nguyên) */}
         <div className="form-container">
             <h3>Thêm Món Mới</h3>
             <form onSubmit={handleAddItem}>
                 <input type="text" placeholder="Tên món" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} required />
-                <input type="number" step="0.01" placeholder="Giá" value={newItemPrice} onChange={(e) => setNewItemPrice(e.target.value)} required />
-                <input type="file" accept="image/png, image/jpeg, image/webp" onChange={(e) => setNewItemImage(e.target.files)} />
+                <input type="number" placeholder="Giá" value={newItemPrice} onChange={(e) => setNewItemPrice(e.target.value)} required />
+                <input type="file" accept="image/*" onChange={(e) => setNewItemImage(e.target.files)} />
                 <button type="submit">Thêm Món</button>
             </form>
         </div>
         
-        {/* DANH SÁCH MENU HIỆN TẠI (Thêm hiển thị ảnh và nút đổi ảnh) */}
         <h2>Thực đơn ({menuItems.length} món)</h2>
         <div className="menu-list">
           {menuItems.map(item => (
-            <div key={item.id} className="menu-item">
+            <div key={item.id} className="menu-item" style={{display: 'flex', alignItems: 'center', marginBottom: '10px'}}>
                {editingItem === item.id ? (
                 <form onSubmit={(e) => handleUpdateItem(e, item.id)} className="edit-form">
                     <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} required />
-                    <input type="number" step="0.01" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} required />
-                    <button type="submit" className="save-btn">Lưu</button>
-                    <button type="button" onClick={cancelEditing} className="cancel-btn">Hủy</button>
+                    <input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} required />
+                    <button type="submit">Lưu</button>
+                    <button type="button" onClick={cancelEditing}>Hủy</button>
                 </form>
               ) : (
                 <>
-                  {item.image_url && (
-                    <img 
-                      src={item.image_url.startsWith('http') ? item.image_url : `http://localhost:5000${item.image_url}`} 
-                      alt={item.name} 
-                      style={{width: '40px', height: '40px', objectFit: 'cover', borderRadius: '5px', marginRight: '10px'}} 
-                    />
-                  )}
-                  <span>{item.name}</span>
-                  <span>{item.price.toFixed(0)} VNĐ</span>
+                  <img 
+                    // 6. SỬA LỖI: Ghép nối URL ảnh đúng cách từ Backend Render
+                    src={item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `${API_BASE_URL}${item.image_url}`) : 'via.placeholder.com'} 
+                    alt={item.name} 
+                    style={{width: '60px', height: '60px', objectFit: 'cover', borderRadius: '5px', marginRight: '15px'}} 
+                  />
+                  <div style={{textAlign: 'left', flexGrow: 1}}>
+                    <div style={{fontWeight: 'bold'}}>{item.name}</div>
+                    <div style={{fontSize: '0.9em'}}>{item.price.toLocaleString()} VNĐ</div>
+                  </div>
                   <div className="item-actions">
-                    {/* NÚT ĐỔI ẢNH */}
-                    <label className="change-image-btn">
-                        Đổi ảnh
-                        <input 
-                            type="file" 
-                            accept="image/png, image/jpeg, image/webp" 
-                            style={{ display: 'none' }}
-                            onChange={(e) => handleImageChange(e, item.id)} 
-                        />
+                    <label className="change-image-btn" style={{cursor: 'pointer', color: '#61dafb', marginRight: '10px'}}>
+                        {uploadingImageId === item.id ? "Đang tải..." : "Đổi ảnh"}
+                        <input type="file" style={{ display: 'none' }} onChange={(e) => handleImageChange(e, item.id)} />
                     </label>
-                    
-                    <button onClick={() => startEditing(item)} className="edit-btn" title="Sửa tên/giá">Sửa</button>
-                    <button onClick={() => handleDeleteItem(item.id)} className="delete-btn" title="Bạn chắc chắn xoá món này?">Xóa món</button>
+                    <button onClick={() => startEditing(item)}>Sửa</button>
+                    <button onClick={() => handleDeleteItem(item.id)} style={{color: 'red'}}>Xóa</button>
                   </div>
                 </>
               )}
