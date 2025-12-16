@@ -7,7 +7,7 @@ function OrdersPage() {
 
   // 1. Hàm lấy danh sách đơn hàng
   const fetchOrders = () => {
-    fetch('http://localhost:5000/api/orders')
+    fetch('https://coffeeshopmanagerapp.onrender.com')
       .then(response => response.json())
       .then(data => {
         // Đảo ngược để đơn mới nhất ở trên
