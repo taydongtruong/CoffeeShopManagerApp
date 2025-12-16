@@ -38,7 +38,7 @@ function CustomerPage() {
   // HÀM XỬ LÝ ĐẶT HÀNG THỰC TẾ (KẾT NỐI BACKEND)
   const handleCheckout = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/orders', {
+      const response = await fetch('https://coffeeshopmanagerapp.onrender.com/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -74,7 +74,7 @@ function CustomerPage() {
         {menuItems.map(item => (
           <div key={item.id} className="customer-item-card">
             <img 
-              src={item.image_url?.startsWith('http') ? item.image_url : `http://localhost:5000${item.image_url}`} 
+              src={item.image_url?.startsWith('http') ? item.image_url : `https://coffeeshopmanagerapp.onrender.com${item.image_url}`} 
               alt={item.name} 
               className="item-image"
               // Đã sửa lại link placeholder chuẩn
