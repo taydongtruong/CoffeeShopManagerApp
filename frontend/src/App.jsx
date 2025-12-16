@@ -45,7 +45,7 @@ function App() {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/menu', {
+      const response = await fetch('https://coffeeshopmanagerapp.onrender.com', {
         method: 'POST',
         body: formData, 
       });
@@ -69,7 +69,7 @@ function App() {
   const handleDeleteItem = async (itemId) => {
     // ... (logic xóa giữ nguyên) ...
     try {
-        const response = await fetch(`http://localhost:5000/api/menu/${itemId}`, { method: 'DELETE' });
+        const response = await fetch(`https://coffeeshopmanagerapp.onrender.com/${itemId}`, { method: 'DELETE' });
         if (!response.ok) throw new Error('Không thể xóa món');
         setMenuItems(menuItems.filter(item => item.id !== itemId));
         alert(`Đã xóa món ID: ${itemId}`);
@@ -95,7 +95,7 @@ function App() {
   const handleUpdateItem = async (event, itemId) => {
     event.preventDefault();
     try {
-      const response = await fetch(`http://localhost:5000/api/menu/${itemId}`, {
+      const response = await fetch(`https://coffeeshopmanagerapp.onrender.com/${itemId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: editName, price: parseFloat(editPrice) }),
@@ -122,7 +122,7 @@ function App() {
     // Vẫn dùng PUT request nhưng chỉ gửi ảnh, backend sẽ xử lý
 
     try {
-      const response = await fetch(`http://localhost:5000/api/menu/${itemId}`, {
+      const response = await fetch(`https://coffeeshopmanagerapp.onrender.com/${itemId}`, {
         method: 'PUT',
         body: formData, // Gửi FormData chứ không phải JSON
       });
