@@ -4,6 +4,10 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
+@app.route('/')
+def index():
+    return {"message": "API Coffee Shop đang hoạt động ổn định!"}, 200
+    
 app = Flask(__name__)
 CORS(app) # Cho phép Frontend truy cập API
 
@@ -38,9 +42,6 @@ class Order(db.Model):
     def to_dict(self):
         return {"id": self.id, "items": self.items, "total_price": self.total_price, "status": self.status}
 
-@app.route('/')
-def home():
-    return jsonify({"status": "Server is running", "message": "Coffee Shop API"}), 200
 
 # --- API MENU ---
 @app.route('/api/menu', methods=['GET'])
