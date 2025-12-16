@@ -1,4 +1,4 @@
-streamlit
-SQLAlchemy
-Pillow
-requests
+flask
+flask-sqlalchemy
+flask-cors
+gunicorn
