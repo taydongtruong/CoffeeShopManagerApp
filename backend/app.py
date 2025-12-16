@@ -1,121 +1,131 @@
+import streamlit as st
+from sqlalchemy import create_engine, Column, Integer, String, Float, Text
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 import os
-from flask import Flask, jsonify, request, send_from_directory
-from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
-from werkzeug.utils import secure_filename 
 
-app = Flask(__name__)
-CORS(app) 
+# --- CẤU HÌNH DATABASE ---
+Base = declarative_base()
+engine = create_engine('sqlite:///coffee_shop.db', connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+db = SessionLocal()
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///coffee_shop.db'
-app.config['UPLOAD_FOLDER'] = 'uploads'
-db = SQLAlchemy(app)
+# --- MODELS ---
+class CoffeeItem(Base):
+    __tablename__ = "coffee_item"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(80), nullable=False)
+    price = Column(Float, nullable=False)
+    image_url = Column(String(200), nullable=True)
 
-# Model Sản phẩm
-class CoffeeItem(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(80), nullable=False)
-    price = db.Column(db.Float, nullable=False)
-    image_url = db.Column(db.String(200), nullable=True)
+class Order(Base):
+    __tablename__ = "order"
+    id = Column(Integer, primary_key=True)
+    items = Column(Text, nullable=False)
+    total_price = Column(Float, nullable=False)
+    status = Column(String(20), default='Chờ xử lý')
 
-    def to_dict(self):
-        return {"id": self.id, "name": self.name, "price": self.price, "image_url": self.image_url}
+# Tạo bảng nếu chưa có
+Base.metadata.create_all(bind=engine)
 
-# Model Đơn hàng
-class Order(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    items = db.Column(db.Text, nullable=False)
-    total_price = db.Column(db.Float, nullable=False)
-    status = db.Column(db.String(20), default='Chờ xử lý')
+# Thêm dữ liệu mẫu nếu DB trống
+if db.query(CoffeeItem).count() == 0:
+    db.add_all([
+        CoffeeItem(name="Espresso", price=35000, image_url="https://nhanvipcoffee.com.vn/wp-content/uploads/2024/06/780x520-2.jpeg"),
+        CoffeeItem(name="Latte", price=42000, image_url="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTR8Q_RrELDLpBSuhHF9CEAWgSBo9mRQtSy-g&s"),
+        CoffeeItem(name="Bạc xỉu", price=30000, image_url="vcdn1-dulich.vnecdn.net")
+    ])
+    db.commit()
 
-    def to_dict(self):
-        return {"id": self.id, "items": self.items, "total_price": self.total_price, "status": self.status}
+# --- GIAO DIỆN STREAMLIT ---
+st.set_page_config(page_title="Coffee Shop Manager", layout="wide")
+st.title("☕ Coffee Shop Management System")
 
-# --- API MENU ---
-@app.route('/api/menu', methods=['GET'])
-def get_menu():
-    items = CoffeeItem.query.all()
-    return jsonify([item.to_dict() for item in items])
+# Menu điều hướng
+menu = ["🛒 Bán hàng", "📦 Quản lý thực đơn", "📋 Danh sách đơn hàng"]
+choice = st.sidebar.selectbox("Chức năng", menu)
 
-@app.route('/api/menu', methods=['POST'])
-def add_item():
-    name = request.form.get('name')
-    price = request.form.get('price')
-    image_file = request.files.get('image')
-    if not name or not price:
-        return jsonify({"message": "Thiếu tên hoặc giá"}), 400
-    image_url = None
-    if image_file:
-        filename = secure_filename(image_file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        image_file.save(filepath)
-        image_url = f'/uploads/{filename}'
-    new_item = CoffeeItem(name=name, price=float(price), image_url=image_url)
-    db.session.add(new_item)
-    db.session.commit()
-    return jsonify(new_item.to_dict()), 201
+# --- CHỨC NĂNG 1: BÁN HÀNG ---
+if choice == "🛒 Bán hàng":
+    st.header("Thực đơn")
+    items = db.query(CoffeeItem).all()
+    
+    if "cart" not in st.session_state:
+        st.session_state.cart = {}
 
-@app.route('/api/menu/<int:item_id>', methods=['PUT'])
-def update_item(item_id):
-    item = CoffeeItem.query.get_or_404(item_id)
-    if 'image' in request.files:
-        image_file = request.files['image']
-        filename = secure_filename(image_file.filename)
-        image_file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        item.image_url = f'/uploads/{filename}'
-    elif request.get_json():
-        data = request.get_json()
-        item.name = data.get('name', item.name)
-        item.price = data.get('price', item.price)
-    db.session.commit()
-    return jsonify(item.to_dict()), 200
+    cols = st.columns(3)
+    for idx, item in enumerate(items):
+        with cols[idx % 3]:
+            st.image(item.image_url if item.image_url else "via.placeholder.com", use_container_width=True)
+            st.subheader(f"{item.name}")
+            st.write(f"Giá: {item.price:,.0f} VNĐ")
+            if st.button(f"Thêm {item.name}", key=f"add_{item.id}"):
+                st.session_state.cart[item.name] = st.session_state.cart.get(item.name, 0) + 1
+                st.toast(f"Đã thêm {item.name} vào giỏ")
 
-@app.route('/api/menu/<int:item_id>', methods=['DELETE'])
-def delete_item(item_id):
-    item = CoffeeItem.query.get_or_404(item_id)
-    db.session.delete(item)
-    db.session.commit()
-    return jsonify({"message": "Deleted"}), 200
+    # Giỏ hàng bên sidebar
+    st.sidebar.header("🛒 Giỏ hàng")
+    total_price = 0
+    cart_summary = []
+    for name, qty in st.session_state.cart.items():
+        price = next(i.price for i in items if i.name == name)
+        total_price += price * qty
+        st.sidebar.write(f"{name} x{qty}: {price*qty:,.0f} VNĐ")
+        cart_summary.append(f"{name} (x{qty})")
 
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    st.sidebar.subheader(f"Tổng: {total_price:,.0f} VNĐ")
+    if st.sidebar.button("Đặt hàng") and st.session_state.cart:
+        new_order = Order(items=", ".join(cart_summary), total_price=total_price)
+        db.add(new_order)
+        db.commit()
+        st.session_state.cart = {}
+        st.sidebar.success("Đặt hàng thành công!")
+        st.rerun()
 
-# --- API ORDERS ---
-@app.route('/api/orders', methods=['GET'])
-def get_orders():
-    orders = Order.query.all()
-    return jsonify([order.to_dict() for order in orders])
+# --- CHỨC NĂNG 2: QUẢN LÝ THỰC ĐƠN ---
+elif choice == "📦 Quản lý thực đơn":
+    st.header("Quản lý món ăn")
+    
+    # Form thêm món
+    with st.expander("➕ Thêm món mới"):
+        with st.form("add_item_form"):
+            new_name = st.text_input("Tên món")
+            new_price = st.number_input("Giá", min_value=0)
+            new_img = st.text_input("Link ảnh (URL)")
+            if st.form_submit_button("Lưu"):
+                item = CoffeeItem(name=new_name, price=new_price, image_url=new_img)
+                db.add(item)
+                db.commit()
+                st.success("Đã thêm món!")
+                st.rerun()
 
-@app.route('/api/orders', methods=['POST'])
-def create_order():
-    data = request.get_json()
-    items_summary = ", ".join([f"{i['name']} (x{i['quantity']})" for i in data['cart']])
-    new_order = Order(items=items_summary, total_price=data['totalPrice'])
-    db.session.add(new_order)
-    db.session.commit()
-    return jsonify(new_order.to_dict()), 201
+    # Danh sách món hiện tại
+    items = db.query(CoffeeItem).all()
+    for item in items:
+        col1, col2, col3 = st.columns([4, 2, 1])
+        col1.write(f"**{item.name}**")
+        col2.write(f"{item.price:,.0f} VNĐ")
+        if col3.button("Xóa", key=f"del_{item.id}"):
+            db.delete(item)
+            db.commit()
+            st.rerun()
 
-@app.route('/api/orders/<int:order_id>/complete', methods=['PUT'])
-def complete_order(order_id):
-    order = Order.query.get_or_404(order_id)
-    order.status = 'Đã xong'
-    db.session.commit()
-    return jsonify(order.to_dict()), 200
-
-@app.route('/api/orders/<int:order_id>', methods=['DELETE'])
-def delete_order(order_id):
-    order = Order.query.get_or_404(order_id)
-    db.session.delete(order)
-    db.session.commit()
-    return jsonify({"message": "Order deleted"}), 200
-
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-        if CoffeeItem.query.count() == 0:
-            db.session.add(CoffeeItem(name="Espresso", price=35000, image_url="https://nhanvipcoffee.com.vn/wp-content/uploads/2024/06/780x520-2.jpeg"))
-            db.session.add(CoffeeItem(name="Latte", price=42000, image_url="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTR8Q_RrELDLpBSuhHF9CEAWgSBo9mRQtSy-g&s"))
-            db.session.add(CoffeeItem(name="Bạc xỉu", price=30000, image_url="vcdn1-dulich.vnecdn.net"))
-            db.session.commit()
-    app.run(debug=True, port=5000)
+# --- CHỨC NĂNG 3: DANH SÁCH ĐƠN HÀNG ---
+elif choice == "📋 Danh sách đơn hàng":
+    st.header("Đơn hàng đã đặt")
+    orders = db.query(Order).order_by(Order.id.desc()).all()
+    
+    for order in orders:
+        with st.container(border=True):
+            c1, c2, c3, c4 = st.columns([1, 4, 2, 2])
+            c1.write(f"#{order.id}")
+            c2.write(f"Món: {order.items}")
+            c3.write(f"**{order.total_price:,.0f} VNĐ**")
+            
+            if order.status == 'Chờ xử lý':
+                if c4.button("Hoàn tất", key=f"done_{order.id}"):
+                    order.status = 'Đã xong'
+                    db.commit()
+                    st.rerun()
+            else:
+                c4.success("✅ Đã xong")
