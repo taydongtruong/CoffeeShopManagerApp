@@ -15,7 +15,7 @@ function App() {
   const [uploadingImageId, setUploadingImageId] = useState(null);
 
   const fetchMenu = () => {
-    fetch('http://localhost:5000/api/menu')
+    fetch('https://coffeeshopmanagerapp.onrender.com')
       .then(response => response.json())
       .then(data => {
         setMenuItems(data);
