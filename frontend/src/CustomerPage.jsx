@@ -5,8 +5,6 @@ function CustomerPage() {
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  // State quản lý giỏ hàng
   const [cart, setCart] = useState([]);
 
   useEffect(() => {
@@ -22,7 +20,6 @@ function CustomerPage() {
       });
   }, []);
 
-  // Hàm thêm vào giỏ: Tự động cộng dồn số lượng nếu trùng món
   const addToCart = (product) => {
     const existingItem = cart.find(item => item.id === product.id);
     if (existingItem) {
@@ -34,9 +31,31 @@ function CustomerPage() {
     }
   };
 
-  // Hàm xóa bớt món khỏi giỏ
   const removeFromCart = (id) => {
     setCart(cart.filter(item => item.id !== id));
+  };
+
+  // HÀM XỬ LÝ ĐẶT HÀNG THỰC TẾ (KẾT NỐI BACKEND)
+  const handleCheckout = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          cart: cart, 
+          totalPrice: totalPrice 
+        }),
+      });
+
+      if (response.ok) {
+        alert("🎉 Đặt hàng thành công! Đơn hàng đã được gửi đến quán.");
+        setCart([]); // Xóa giỏ hàng sau khi đặt thành công
+      } else {
+        alert("Có lỗi xảy ra khi gửi đơn hàng.");
+      }
+    } catch (err) {
+      alert("Không thể kết nối đến máy chủ.");
+    }
   };
 
   const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -51,7 +70,6 @@ function CustomerPage() {
         <p>Hương vị cà phê nguyên bản cho ngày mới năng động</p>
       </div>
 
-      {/* Lưới sản phẩm */}
       <div className="customer-menu-grid">
         {menuItems.map(item => (
           <div key={item.id} className="customer-item-card">
@@ -59,7 +77,7 @@ function CustomerPage() {
               src={item.image_url?.startsWith('http') ? item.image_url : `http://localhost:5000${item.image_url}`} 
               alt={item.name} 
               className="item-image"
-              // Sửa lỗi URL placeholder
+              // Đã sửa lại link placeholder chuẩn
               onError={(e) => e.target.src = 'via.placeholder.com'}
             />
             <div className="item-info">
@@ -75,7 +93,6 @@ function CustomerPage() {
         ))}
       </div>
 
-      {/* GIỎ HÀNG (Đã được khôi phục đầy đủ) */}
       {cart.length > 0 && (
         <div className="cart-summary">
           <h3>🛒 Giỏ hàng của bạn</h3>
@@ -83,7 +100,7 @@ function CustomerPage() {
             {cart.map(item => (
               <div key={item.id} className="cart-item-row" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid #eee', paddingBottom: '5px'}}>
                 <div style={{textAlign: 'left'}}>
-                  <div style={{fontWeight: 'bold'}}>{item.name}</div>
+                  <div style={{fontWeight: 'bold', color: '#333'}}>{item.name}</div>
                   <small>Số lượng: {item.quantity}</small>
                 </div>
                 <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
@@ -99,10 +116,11 @@ function CustomerPage() {
             ))}
           </div>
           <div className="total-price" style={{borderTop: '2px solid #a05a2c', paddingTop: '10px', textAlign: 'right'}}>
-            <span style={{fontSize: '1rem'}}>Tổng tiền:</span>
-            <div style={{fontSize: '1.5rem', color: '#a05a2c'}}>{totalPrice.toLocaleString()} VNĐ</div>
+            <span style={{fontSize: '1rem', color: '#666'}}>Tổng cộng:</span>
+            <div style={{fontSize: '1.5rem', color: '#a05a2c', fontWeight: 'bold'}}>{totalPrice.toLocaleString()} VNĐ</div>
           </div>
-          <button className="checkout-btn" onClick={() => alert("Cảm ơn bạn! Đơn hàng đã được ghi nhận.")}>
+          {/* Đã cập nhật hàm xử lý đặt hàng thực tế */}
+          <button className="checkout-btn" onClick={handleCheckout}>
             XÁC NHẬN ĐẶT HÀNG
           </button>
         </div>

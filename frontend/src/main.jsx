@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import App from './App.jsx'; // Trang Admin
 import CustomerPage from './CustomerPage.jsx'; // Trang Khách hàng
 import './index.css';
+import OrdersPage from './OrdersPage.jsx'; // Trang đơn hàng
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -15,6 +16,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         
         {/* Route cho Admin: http://localhost:5173/admin */}
         <Route path="/admin" element={<App />} />
+	<Route path="/orders" element={<OrdersPage />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>,
