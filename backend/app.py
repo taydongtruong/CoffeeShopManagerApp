@@ -2,10 +2,10 @@ import streamlit as st
 from sqlalchemy import create_engine, Column, Integer, String, Float, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import os
 
 # --- CẤU HÌNH DATABASE ---
 Base = declarative_base()
+# Sử dụng check_same_thread=False để hỗ trợ đa luồng trong Streamlit
 engine = create_engine('sqlite:///coffee_shop.db', connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 db = SessionLocal()
@@ -16,7 +16,7 @@ class CoffeeItem(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(80), nullable=False)
     price = Column(Float, nullable=False)
-    image_url = Column(String(200), nullable=True)
+    image_url = Column(String(500), nullable=True)
 
 class Order(Base):
     __tablename__ = "order"
@@ -28,17 +28,20 @@ class Order(Base):
 # Tạo bảng nếu chưa có
 Base.metadata.create_all(bind=engine)
 
+# Link ảnh mặc định nếu không có ảnh
+DEFAULT_IMAGE = "via.placeholder.com"
+
 # Thêm dữ liệu mẫu nếu DB trống
 if db.query(CoffeeItem).count() == 0:
     db.add_all([
-        CoffeeItem(name="Espresso", price=35000, image_url="https://nhanvipcoffee.com.vn/wp-content/uploads/2024/06/780x520-2.jpeg"),
-        CoffeeItem(name="Latte", price=42000, image_url="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTR8Q_RrELDLpBSuhHF9CEAWgSBo9mRQtSy-g&s"),
+        CoffeeItem(name="Espresso", price=35000, image_url="nhanvipcoffee.com.vn"),
+        CoffeeItem(name="Latte", price=42000, image_url="encrypted-tbn0.gstatic.com"),
         CoffeeItem(name="Bạc xỉu", price=30000, image_url="vcdn1-dulich.vnecdn.net")
     ])
     db.commit()
 
 # --- GIAO DIỆN STREAMLIT ---
-st.set_page_config(page_title="Coffee Shop Manager", layout="wide")
+st.set_page_config(page_title="Coffee Shop Manager 2025", layout="wide")
 st.title("☕ Coffee Shop Management System")
 
 # Menu điều hướng
@@ -56,22 +59,27 @@ if choice == "🛒 Bán hàng":
     cols = st.columns(3)
     for idx, item in enumerate(items):
         with cols[idx % 3]:
-            st.image(item.image_url if item.image_url else "via.placeholder.com", use_container_width=True)
+            # Xử lý lỗi ảnh bằng cách kiểm tra URL hợp lệ
+            img_url = item.image_url if (item.image_url and item.image_url.startswith("http")) else DEFAULT_IMAGE
+            st.image(img_url, use_container_width=True)
             st.subheader(f"{item.name}")
             st.write(f"Giá: {item.price:,.0f} VNĐ")
             if st.button(f"Thêm {item.name}", key=f"add_{item.id}"):
                 st.session_state.cart[item.name] = st.session_state.cart.get(item.name, 0) + 1
-                st.toast(f"Đã thêm {item.name} vào giỏ")
+                st.toast(f"Đã thêm {item.name}")
 
     # Giỏ hàng bên sidebar
     st.sidebar.header("🛒 Giỏ hàng")
     total_price = 0
     cart_summary = []
     for name, qty in st.session_state.cart.items():
-        price = next(i.price for i in items if i.name == name)
-        total_price += price * qty
-        st.sidebar.write(f"{name} x{qty}: {price*qty:,.0f} VNĐ")
-        cart_summary.append(f"{name} (x{qty})")
+        # Tìm giá của món dựa trên tên
+        item_data = next((i for i in items if i.name == name), None)
+        if item_data:
+            price = item_data.price
+            total_price += price * qty
+            st.sidebar.write(f"{name} x{qty}: {price*qty:,.0f} VNĐ")
+            cart_summary.append(f"{name} (x{qty})")
 
     st.sidebar.subheader(f"Tổng: {total_price:,.0f} VNĐ")
     if st.sidebar.button("Đặt hàng") and st.session_state.cart:
@@ -86,29 +94,31 @@ if choice == "🛒 Bán hàng":
 elif choice == "📦 Quản lý thực đơn":
     st.header("Quản lý món ăn")
     
-    # Form thêm món
     with st.expander("➕ Thêm món mới"):
         with st.form("add_item_form"):
             new_name = st.text_input("Tên món")
             new_price = st.number_input("Giá", min_value=0)
-            new_img = st.text_input("Link ảnh (URL)")
+            new_img = st.text_input("Link ảnh (URL đầy đủ bắt đầu bằng http)")
             if st.form_submit_button("Lưu"):
-                item = CoffeeItem(name=new_name, price=new_price, image_url=new_img)
-                db.add(item)
-                db.commit()
-                st.success("Đã thêm món!")
-                st.rerun()
+                if new_name and new_price > 0:
+                    item = CoffeeItem(name=new_name, price=new_price, image_url=new_img)
+                    db.add(item)
+                    db.commit()
+                    st.success("Đã thêm món!")
+                    st.rerun()
+                else:
+                    st.error("Vui lòng điền đầy đủ tên và giá")
 
-    # Danh sách món hiện tại
     items = db.query(CoffeeItem).all()
     for item in items:
-        col1, col2, col3 = st.columns([4, 2, 1])
-        col1.write(f"**{item.name}**")
-        col2.write(f"{item.price:,.0f} VNĐ")
-        if col3.button("Xóa", key=f"del_{item.id}"):
-            db.delete(item)
-            db.commit()
-            st.rerun()
+        with st.container(border=True):
+            col1, col2, col3 = st.columns([2, 1, 1])
+            col1.write(f"**{item.name}**")
+            col2.write(f"{item.price:,.0f} VNĐ")
+            if col3.button("Xóa", key=f"del_{item.id}"):
+                db.delete(item)
+                db.commit()
+                st.rerun()
 
 # --- CHỨC NĂNG 3: DANH SÁCH ĐƠN HÀNG ---
 elif choice == "📋 Danh sách đơn hàng":
@@ -129,3 +139,8 @@ elif choice == "📋 Danh sách đơn hàng":
                     st.rerun()
             else:
                 c4.success("✅ Đã xong")
+            
+            if st.button("Xóa đơn", key=f"del_ord_{order.id}"):
+                db.delete(order)
+                db.commit()
+                st.rerun()
