@@ -2,14 +2,21 @@ import { useState, useEffect } from 'react';
 import './CustomerPage.css';
 
 function CustomerPage() {
+  // Định nghĩa URL gốc của Render
+  const API_BASE_URL = 'https://coffeeshopmanagerapp.onrender.com';
+
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [cart, setCart] = useState([]);
 
   useEffect(() => {
-    fetch('https://coffeeshopmanagerapp.onrender.com')
-      .then(response => response.json())
+    // SỬA LỖI: Thêm đúng endpoint /api/menu
+    fetch(`${API_BASE_URL}/api/menu`)
+      .then(response => {
+        if (!response.ok) throw new Error('Không thể lấy danh sách món ăn');
+        return response.json();
+      })
       .then(data => {
         setMenuItems(data);
         setLoading(false);
@@ -35,10 +42,12 @@ function CustomerPage() {
     setCart(cart.filter(item => item.id !== id));
   };
 
-  // HÀM XỬ LÝ ĐẶT HÀNG THỰC TẾ (KẾT NỐI BACKEND)
   const handleCheckout = async () => {
+    if (cart.length === 0) return;
+    
     try {
-      const response = await fetch('https://coffeeshopmanagerapp.onrender.com/api/orders', {
+      // SỬA LỖI: Sử dụng API_BASE_URL
+      const response = await fetch(`${API_BASE_URL}/api/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -49,7 +58,7 @@ function CustomerPage() {
 
       if (response.ok) {
         alert("🎉 Đặt hàng thành công! Đơn hàng đã được gửi đến quán.");
-        setCart([]); // Xóa giỏ hàng sau khi đặt thành công
+        setCart([]); 
       } else {
         alert("Có lỗi xảy ra khi gửi đơn hàng.");
       }
@@ -61,7 +70,7 @@ function CustomerPage() {
   const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   if (loading) return <div className="customer-page-container">⚡ Đang chuẩn bị menu...</div>;
-  if (error) return <div className="customer-page-container">Lỗi kết nối: {error.message}</div>;
+  if (error) return <div className="customer-page-container">Lỗi kết nối: {error.message}. Hãy thử tải lại trang sau 1 phút (Backend Render đang khởi động).</div>;
 
   return (
     <div className="customer-page-container">
@@ -74,10 +83,10 @@ function CustomerPage() {
         {menuItems.map(item => (
           <div key={item.id} className="customer-item-card">
             <img 
-              src={item.image_url?.startsWith('http') ? item.image_url : `https://coffeeshopmanagerapp.onrender.com${item.image_url}`} 
+              // SỬA LỖI: Ghép nối URL ảnh chuẩn từ server Render
+              src={item.image_url?.startsWith('http') ? item.image_url : `${API_BASE_URL}${item.image_url}`} 
               alt={item.name} 
               className="item-image"
-              // Đã sửa lại link placeholder chuẩn
               onError={(e) => e.target.src = 'via.placeholder.com'}
             />
             <div className="item-info">
@@ -119,7 +128,6 @@ function CustomerPage() {
             <span style={{fontSize: '1rem', color: '#666'}}>Tổng cộng:</span>
             <div style={{fontSize: '1.5rem', color: '#a05a2c', fontWeight: 'bold'}}>{totalPrice.toLocaleString()} VNĐ</div>
           </div>
-          {/* Đã cập nhật hàm xử lý đặt hàng thực tế */}
           <button className="checkout-btn" onClick={handleCheckout}>
             XÁC NHẬN ĐẶT HÀNG
           </button>
